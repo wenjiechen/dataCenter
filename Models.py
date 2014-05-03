@@ -5,8 +5,13 @@ class Switch(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self,ID):
-        self.ID = int(ID)
+        self._ID = int(ID)
         self.connections = {}
+
+    # ID is read only attribute
+    @property
+    def ID(self):
+        return self._ID
 
     def add_connection(self, port, machine):
         self.connections[int(port)] = machine
@@ -49,20 +54,28 @@ class Leaf(Switch):
 class Host(object):
 
     def __init__(self,complex_ID,MACs=None,IPs=None):
-        self.rack_id = None
-        self.ID = None
+        self._rack_id = None
+        self._ID = None
         self._decompose_complex_ID(complex_ID)
+        self.connections = {}
         self.MACs = MACs
         self.IPs = IPs
-        self.connections = {}
+
+    @property
+    def rack_id(self):
+        return self._rack_id
+
+    @property
+    def ID(self):
+        return self._ID
 
     def _decompose_complex_ID(self,complex_ID):
         id_pattern = re.compile(r'^r\d+_\d+')
         if id_pattern.match(complex_ID) == None:
             raise ValueError("It's not valid complex ID for Host:" + complex_ID)
         rack_id, host_id = complex_ID.split('_')
-        self.rack_id = int(rack_id[1:])
-        self.ID = int(host_id)
+        self._rack_id = int(rack_id[1:])
+        self._ID = int(host_id)
 
     def add_connection(self,port,machine):
         self.connections[int(port)] = machine
@@ -119,7 +132,7 @@ def test3():
     d = {s1:100, s2:200}
     print d[Spine(1)]
     print d[factory('Spine',2)]
-    s1.ID = 200
+    # s1.ID = 200
     print s1
 
 if __name__=='__main__':

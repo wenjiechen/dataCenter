@@ -66,8 +66,8 @@ if __name__=='__main__':
     print dc._datacenter_model.neighbors(Leaf(1))
     print dc._datacenter_model.neighbors(Host('r1_1'))
     print '========'
-
-
-
+    l1 = dc._datacenter_model.neighbors(Host('r1_1'))[1]
+    print l1.connections
+    # l1.ID = 2
 
 
