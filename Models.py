@@ -1,4 +1,4 @@
-import abc
+import abc, re
 
 class Switch(object):
     """abstract base class of Switch"""
@@ -6,20 +6,23 @@ class Switch(object):
 
     def __init__(self,ID):
         self.ID = int(ID)
-        self.switch_table = []
+        self.connections = {}
+
+    def add_connection(self, port, machine):
+        self.connections[int(port)] = machine
 
     def __repr__(self):
         return self.__str__()
 
     @abc.abstractmethod
     def __eq__(self, other):
-        """in order to be used by networks"""
-        pass
+        """Override, in order to be used by networks"""
+        return
 
     @abc.abstractmethod
     def __hash__(self):
-        """in order to be used by networks"""
-        pass
+        """override, in order to be used by networks"""
+        return
 
 class Spine(Switch):
 
@@ -45,11 +48,24 @@ class Leaf(Switch):
 
 class Host(object):
 
-    def __init__(self,rack_id,ID,MACs=None,IPs=None):
-        self.rack_id = int(rack_id)
-        self.ID = int(ID)
+    def __init__(self,complex_ID,MACs=None,IPs=None):
+        self.rack_id = None
+        self.ID = None
+        self._decompose_complex_ID(complex_ID)
         self.MACs = MACs
         self.IPs = IPs
+        self.connections = {}
+
+    def _decompose_complex_ID(self,complex_ID):
+        id_pattern = re.compile(r'^r\d+_\d+')
+        if id_pattern.match(complex_ID) == None:
+            raise ValueError("It's not valid complex ID for Host:" + complex_ID)
+        rack_id, host_id = complex_ID.split('_')
+        self.rack_id = int(rack_id[1:])
+        self.ID = int(host_id)
+
+    def add_connection(self,port,machine):
+        self.connections[int(port)] = machine
 
     def __str__(self):
         # return 'Host_' + str(self.ID) + ', Rack_' + str(self.rack_num) + ', MACs: '+str(self.MACs) + ', IPs: ' + str(self.IPs)
@@ -91,13 +107,11 @@ def factory(type, ID):
     elif type == "Leaf":
         return Leaf(ID)
     elif type == "Host":
-        rack_id, host_id = ID.split('_')
-        host = Host(rack_id[1:],host_id)
-        return host
+        return Host(ID)
     elif type == "Rack":
         return Rack(ID)
     else:
-        raise TypeError("Don't have this type")
+        raise TypeError("Don't have the type: "+ type)
 
 def test3():
     s1 = Spine(1)
