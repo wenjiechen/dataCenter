@@ -8,18 +8,20 @@ class Switch(object):
         self.ID = int(ID)
         self.switch_table = []
 
-    @abc.abstractmethod
-    def update_switch_table(self):
-        """update switch table"""
-        pass
-
     def __repr__(self):
         return self.__str__()
 
-class Spine(Switch):
+    @abc.abstractmethod
+    def __eq__(self, other):
+        """in order to be used by networks"""
+        pass
 
-    def update_switch_table(self):
-        print 'spine'
+    @abc.abstractmethod
+    def __hash__(self):
+        """in order to be used by networks"""
+        pass
+
+class Spine(Switch):
 
     def __str__(self):
         return 'Spine_'+str(self.ID)
@@ -31,8 +33,6 @@ class Spine(Switch):
         return hash('spine') + hash(17 + self.ID)
 
 class Leaf(Switch):
-    def update_switch_table(self):
-        print'Leaf'
 
     def __str__(self):
         return 'Leaf_'+str(self.ID)
