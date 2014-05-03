@@ -97,10 +97,11 @@ class Rack(object):
 
     def __init__(self,ID):
         self.ID = int(ID)
-        self.hosts = []
+        self.hosts = set()
 
     def add_host(self,host):
-        self.hosts.append(host)
+        if host not in self.hosts:
+            self.hosts.add(host)
 
     def __str__(self):
         return 'Rack_' + str(self.ID)
