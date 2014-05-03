@@ -78,7 +78,7 @@ class Host(object):
         return isinstance(other, Host) and self.ID == other.ID and self.rack_id == other.rack_id
 
     def __hash__(self):
-        return hash(17 + self.ID*31 + self.rack_id)
+        return hash('host') + hash(17 + self.ID*31 + self.rack_id)
 
 class Rack(object):
 
@@ -99,7 +99,7 @@ class Rack(object):
         return isinstance(other, Rack) and self.ID == other.ID
 
     def __hash__(self):
-        return hash(17 + self.ID)
+        return hash('rack') + hash(17 + self.ID)
 
 def factory(type, ID):
     if type == "Spine":
@@ -119,6 +119,8 @@ def test3():
     d = {s1:100, s2:200}
     print d[Spine(1)]
     print d[factory('Spine',2)]
+    s1.ID = 200
+    print s1
 
 if __name__=='__main__':
     test3()
