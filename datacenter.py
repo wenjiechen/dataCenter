@@ -19,24 +19,26 @@ class DataCenter(object):
             rack = Models.factory('Rack',node1.rack_id)
             self._datacenter_model.add_node(rack)
 
-    def load_csv_model_by_edges(self, file_path, delimiter=','):
+    def load_model_by_edges(self, file_path, delimiter=','):
         with open(file_path,'rb') as csv_model:
             reader = csv.reader(csv_model,delimiter=delimiter)
             # skip the headers
             next(reader, None)
-            for row in reader:
+            for line in reader:
                 # eliminate whitespace in words
-                self._add_edge([e.strip() for e in row])
+                self._add_edge([e.strip() for e in line])
 
     def load_hosts_attributes(self,file_path):
         pass
 
+    def load_model_by_nodes(self):
+        pass
 
 if __name__=='__main__':
     dc = DataCenter()
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
-    dc.load_csv_model_by_edges(file_path2)
+    dc.load_model_by_edges(file_path2)
     print sorted(dc._datacenter_model.nodes())
     print dc._datacenter_model.neighbors(Spine(1))
     print dc._datacenter_model.neighbors(Leaf(1))
