@@ -70,38 +70,48 @@ class Host(object):
         return self._ID
 
     def _decompose_complex_ID(self,complex_ID):
-        id_pattern = re.compile(r'^r\d+_\d+')
-        if id_pattern.match(complex_ID) == None:
-            raise ValueError("It's not valid complex ID for Host:" + complex_ID)
-        rack_id, host_id = complex_ID.split('_')
-        self._rack_id = int(rack_id[1:])
-        self._ID = int(host_id)
+        complex_pattern = re.compile(r'^r\d+_\d+')
+        simple_pattern = re.compile(r'^\d+')
+        if complex_pattern.match(str(complex_ID)) :
+            rack_id, host_id = complex_ID.split('_')
+            self._rack_id = int(rack_id[1:])
+            self._ID = int(host_id)
+        elif simple_pattern.match(str(complex_ID)):
+            self._ID = int(complex_ID)
+        else:
+            raise ValueError("'%s' not valid ID for Host." %(complex_ID))
 
     def add_connection(self,port,device):
         self.connections[int(port)] = device
 
     def __str__(self):
         # return 'Host_' + str(self.ID) + ', Rack_' + str(self.rack_num) + ', MACs: '+str(self.MACs) + ', IPs: ' + str(self.IPs)
-        return 'Host_' + str(self.ID) + '@Rack_' + str(self.rack_id)
+        # return 'Host_' + str(self.ID) + '@Rack_' + str(self.rack_id)
+        return 'Host_' + str(self.ID)
 
     def __repr__(self):
         return self.__str__()
 
     def __eq__(self, other):
-        return isinstance(other, Host) and self.ID == other.ID and self.rack_id == other.rack_id
+        # return isinstance(other, Host) and self.ID == other.ID and self.rack_id == other.rack_id
+        return isinstance(other, Host) and self.ID == other.ID
 
     def __hash__(self):
-        return hash('host') + hash(17 + self.ID*31 + self.rack_id)
+        # return hash('host') + hash(17 + self.ID*31 + self.rack_id)
+        return hash('host') + hash(17 + self.ID)
 
 class Rack(object):
 
     def __init__(self,ID):
         self.ID = int(ID)
         self.hosts = set()
+        self.leafs = set()
 
     def add_host(self,host):
-        if host not in self.hosts:
-            self.hosts.add(host)
+        self.hosts.add(host)
+
+    def add_leaf(self,leaf):
+        self.leafs.add(leaf)
 
     def __str__(self):
         return 'Rack_' + str(self.ID)

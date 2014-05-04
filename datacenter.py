@@ -23,7 +23,7 @@ class DataCenter(object):
         if node not in self._datacenter_graph_model.nodes():
             # add attribute for node
             if isinstance(node, Rack):
-                self._datacenter_graph_model.add_node(node,hosts=set())
+                self._datacenter_graph_model.add_node(node,hosts_leafs=set())
             else:
                 self._datacenter_graph_model.add_node(node,connections={})
             return node
@@ -49,7 +49,7 @@ class DataCenter(object):
         self._datacenter_graph_model.node[node1]['connections'][int(port1)]=node2
         self._datacenter_graph_model.node[node2]['connections'][int(port2)]=node1
 
-        # if a node is Host, then add the corresponding Rack node
+        # if a node is Host, add the corresponding Rack node
         host = None
         if isinstance(node1,Host):
             host = node1
@@ -57,10 +57,17 @@ class DataCenter(object):
             host = node2
 
         if not host == None:
+            # add Host to Rack
             rack = self._add_or_get_node_in_model(Models.factory('Rack',host.rack_id))
             rack.add_host(host)
-            self._datacenter_graph_model.add_edge(rack,host)
-            self._datacenter_graph_model.node[rack]['hosts'].add(host)
+            # self._datacenter_graph_model.add_edge(rack,host)
+            self._datacenter_graph_model.node[rack]['hosts_leafs'].add(host)
+
+            # add Leaf to Rack
+            leaf = node2 if host==node1 else node1
+            rack.add_leaf(leaf)
+            # self._datacenter_graph_model.add_edge(rack,leaf)
+            self._datacenter_graph_model.node[rack]['hosts_leafs'].add(leaf)
 
     def load_model_by_edges(self, file_path, delimiter=','):
         self._datacenter_graph_model = nx.Graph()
@@ -119,30 +126,40 @@ class DataCenter(object):
         for neighbor in self._datacenter_graph_model.neighbors(node):
             self.delete_edge(node,neighbor)
 
-        # delete node
         self._datacenter_graph_model.remove_node(node)
 
-    def find_device_by_keywords(self,**kwargs):
+    # def query_device_on_port_by_keywords(self,**kwargs):
+    #     for k,v in kwargs.items():
 
-        pass
+    def query_device_on_port(self,device_type,device_id,port,rack_id=None):
 
-    def find_device(self,port,device_type,device_id,rack_id=None):
         device = Models.factory(device_type,device_id)
         try:
             ret_device = self._datacenter_graph_model.node[device]['connections'][int(port)]
-        except KeyError:
-            print "!!!ERROR: Can't find the %s_%d or port %d" %(device_type,device_id,port)
+        except KeyError as ex:
+            if ex.args[0] == port:
+                print "!!!ERROR: the 'port: %s' of '%s' is not exist or not connected to any device" %(ex,device)
+            else:
+                print "!!!ERROR: '%s' is not exist in model" %ex
             return None
-        except Exception as ex:
-            raise ex
+        except Exception:
+            raise
+        # found the device and check if it's valid
         else:
             if rack_id == None:
                 return ret_device
-            elif ret_device in self._datacenter_graph_model.node[Rack(rack_id)]['hosts']:
-                return ret_device
             else:
-                print "device not exist."
-                return None
+                if Rack(rack_id) not in self._datacenter_graph_model.nodes():
+                    print "!!!ERROR: 'rack_%d' is not exist" %(rack_id)
+                    return None
+                elif device not in self._datacenter_graph_model.node[Rack(rack_id)]['hosts_leafs']:
+                    print '!!!ERROR: device "%s" is not in rack %d' %(device,rack_id)
+                    return None
+                else:
+                    return ret_device
+
+    def find_ports(self):
+        pass
 
 def test4():
     dc = DataCenter()
@@ -169,13 +186,26 @@ def test5():
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
     dc.load_model_by_edges(file_path2)
-    # print dc.find_device(5,'leaf',1)
-    # print dc.find_device(2,'host','r1_1')
-    print dc.find_device(2,'leaf',12)
+    print dc.query_device_on_port('leaf',1,20)
+    print dc.query_device_on_port('leaf',10,20)
+    print dc.query_device_on_port('host',1,2)
+    print dc.query_device_on_port('leaf',1,5,3)
+    print dc.query_device_on_port('leaf',1,5,2)
+    print dc.query_device_on_port('leaf',1,5,1)
+    # print dc.model.node[Rack(1)]['hosts_leafs']
+    # print dc.model.neighbors(Leaf(1))
 
+    # print dc.model.node[Rack(2)]
+    # print dc.model.node[Host(1)]
+
+    # print dc.query_device_on_port('leaf',12,2)
+    # print dc.query_device_on_port('leaf',1,20)
+    # print dc.query_device_on_port('leaf',1,10,rack_id=3)
+    # print dc.query_device_on_port('leaf',1,10,rack_id=2)
+    # print dc.model.neighbors(Host('r1_2'))
 
 if __name__=='__main__':
     # test1()
     # test2()
-    test4()
-    # test5()
+    # test4()
+    test5()
