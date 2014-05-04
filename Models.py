@@ -13,8 +13,8 @@ class Switch(object):
     def ID(self):
         return self._ID
 
-    def add_connection(self, port, machine):
-        self.connections[int(port)] = machine
+    def add_connection(self, port, device):
+        self.connections[int(port)] = device
 
     def __repr__(self):
         return self.__str__()
@@ -77,8 +77,8 @@ class Host(object):
         self._rack_id = int(rack_id[1:])
         self._ID = int(host_id)
 
-    def add_connection(self,port,machine):
-        self.connections[int(port)] = machine
+    def add_connection(self,port,device):
+        self.connections[int(port)] = device
 
     def __str__(self):
         # return 'Host_' + str(self.ID) + ', Rack_' + str(self.rack_num) + ', MACs: '+str(self.MACs) + ', IPs: ' + str(self.IPs)
@@ -115,17 +115,18 @@ class Rack(object):
     def __hash__(self):
         return hash('rack') + hash(17 + self.ID)
 
-def factory(type, ID):
-    if type == "Spine":
+def factory(device_type, ID):
+    device_type_l = device_type.lower()
+    if device_type_l == "spine":
         return Spine(ID)
-    elif type == "Leaf":
+    elif device_type_l == "leaf":
         return Leaf(ID)
-    elif type == "Host":
+    elif device_type_l == "host":
         return Host(ID)
-    elif type == "Rack":
+    elif device_type_l == "rack":
         return Rack(ID)
     else:
-        raise TypeError("Don't have the type: "+ type)
+        raise TypeError("Don't have the device type: "+ device_type)
 
 def test3():
     s1 = Spine(1)
