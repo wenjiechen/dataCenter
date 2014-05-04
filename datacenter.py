@@ -144,63 +144,6 @@ class DataCenter(object):
                 print "device not exist."
                 return None
 
-def test1():
-    dc = DataCenter()
-    file_path = 'testModel.csv'
-    file_path2 = 'dcModel2.csv'
-    dc.load_model_by_edges(file_path2)
-    print sorted(dc._datacenter_graph_model.nodes())
-    print sorted(dc._datacenter_graph_model.edges())
-    print dc._datacenter_graph_model.neighbors(Spine(1))
-    print dc._datacenter_graph_model.neighbors(Leaf(1))
-    print dc._datacenter_graph_model.neighbors(Host('r1_1'))
-    print '========'
-    l1 = dc._datacenter_graph_model.neighbors(Leaf(1))
-    print l1
-    print l1[6].connections
-
-def test2():
-    dc = DataCenter()
-    file_path = 'testModel.csv'
-    file_path2 = 'dcModel2.csv'
-    dc.load_model_by_edges(file_path2)
-    # print dc._datacenter_graph_model[Leaf(3)]
-    s1 = dc._add_or_get_node_in_model(Spine(1))
-    l1 = dc._add_or_get_node_in_model(Leaf(1))
-    h1 = dc._add_or_get_node_in_model(Host('r1_1'))
-    r1 = dc._add_or_get_node_in_model(Rack(1))
-    # print s1.connections
-    # print l1.connections
-    # print h1.connections
-    # print r1.hosts
-    # print '======='
-    # print dc._datacenter_graph_model[s1]
-    # print dc._datacenter_graph_model[Spine(1)]['connections']
-    print dc._datacenter_graph_model[Spine(1)]
-    print dc._datacenter_graph_model[Leaf(1)]['connections']
-    print l1.connections
-    print '=========='
-    print dc._datacenter_graph_model[Rack(1)]['hosts']
-    print r1.hosts
-
-def test3():
-    dc = DataCenter()
-    file_path = 'testModel.csv'
-    file_path2 = 'dcModel2.csv'
-    dc.load_model_by_edges(file_path2)
-    #delete edge
-    print dc._datacenter_graph_model.neighbors(Spine(1))
-    print dc._datacenter_graph_model.node[Spine(1)]
-    print dc._datacenter_graph_model.neighbors(Leaf(1))
-    print dc._datacenter_graph_model.node[Leaf(1)]
-    dc.delete_edge(Spine(1),Leaf(1))
-    print '-----------'
-    print dc._datacenter_graph_model.neighbors(Spine(1))
-    print dc._datacenter_graph_model.node[Spine(1)]
-    print dc._datacenter_graph_model.neighbors(Leaf(1))
-    print dc._datacenter_graph_model.node[Leaf(1)]
-    print dc._datacenter_graph_model.node[Rack(1)]
-
 def test4():
     dc = DataCenter()
     file_path = 'testModel.csv'
