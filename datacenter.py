@@ -13,7 +13,7 @@ class DataCenter(object):
     def _add_or_get_node_in_model(self,node):
         """get exist node or add not exist node in graph model.
 
-            Don't use it out side this class
+            Don't use the method out side this class
         """
         #add not exist node
         if node not in self._datacenter_graph_model.nodes():
@@ -71,13 +71,40 @@ class DataCenter(object):
                     # eliminate whitespace in words
                     self._add_edge([e.strip() for e in line])
                 except Exception as ex:
-                    sys.stderr.write('!!!WARNING: check model file: "'+str(file_path)+ '", at line: ' + str(line_num + 2) +'\n')
+                    sys.stderr.write('!!!ERROR: check model file: "'+str(file_path)+ '", at line: ' + str(line_num + 2) +'\n')
                     raise ex
 
     def load_hosts_attributes(self,file_path):
         pass
 
     def load_model_by_nodes(self):
+        pass
+
+    def clear_model(self):
+        self._datacenter_graph_model.clear()
+
+    def delete_edge(self,node1,node2):
+        #delete connection attribute in nodes
+        try:
+            # delete connection in node1
+            connections = self._datacenter_graph_model[node1]['connections']
+            for port, node in connections:
+                if node == node2:
+                    del connections[port]
+            connections = self._datacenter_graph_model[node2]['connections']
+            for port, node in connections:
+                if node == node1:
+                    del connections[port]
+        except KeyError as ex:
+            sys.stderr.write("!!!ERROR: Don't exist node '"+ node1 +"' or '" + node2+ "' in model: ")
+            raise ex
+        except Exception as ex:
+            raise ex
+
+        #delete edge from model
+        self._datacenter_graph_model.remove_edge(node1,node2)
+
+    def delete_node(self,node):
         pass
 
 def test1():
@@ -119,6 +146,18 @@ def test2():
     print dc._datacenter_graph_model[Rack(1)]['hosts']
     print r1.hosts
 
+def test3():
+    dc = DataCenter()
+    file_path = 'testModel.csv'
+    file_path2 = 'dcModel2.csv'
+    dc.load_model_by_edges(file_path2)
+    #delete api
+    # print Spine(1), dc._datacenter_graph_model[Spine(1)]['connections']
+    # print dc._datacenter_graph_model.neighbors(Spine(1))
+    # print Leaf(1), dc._datacenter_graph_model[Leaf(1)]['connections']
+    print dc._datacenter_graph_model.neighbors(Leaf(1))
+
 if __name__=='__main__':
     # test1()
-    test2()
+    # test2()
+    test3()
