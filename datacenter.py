@@ -10,6 +10,10 @@ class DataCenter(object):
         self.name = name
         self._datacenter_graph_model = None
 
+    @property
+    def model(self):
+        return self._datacenter_graph_model
+
     def _add_or_get_node_in_model(self,node):
         """get exist node or add not exist node in graph model.
 
@@ -20,10 +24,8 @@ class DataCenter(object):
             # add attribute for node
             if isinstance(node, Rack):
                 self._datacenter_graph_model.add_node(node,hosts=set())
-                # self._datacenter_graph_model[node]['hosts']=set()
             else:
                 self._datacenter_graph_model.add_node(node,connections={})
-                # self._datacenter_graph_model[node]['connections']={}
             return node
         # get exist node in model
         else:
@@ -72,7 +74,7 @@ class DataCenter(object):
                     # eliminate whitespace in words
                     self._add_edge([e.strip() for e in line])
                 except Exception as ex:
-                    sys.stderr.write('!!!ERROR: check model file: "'+str(file_path)+ '", at line: ' + str(line_num + 2) +'\n')
+                    sys.stderr.write("!!!ERROR: check model file: '%s', at line: %d\n" %(file_path,line_num+2))
                     raise ex
 
     def load_hosts_attributes(self,file_path):
@@ -92,12 +94,13 @@ class DataCenter(object):
             for port, node in connections.items():
                 if node == node2:
                     del connections[port]
+            # delete connection in node2
             connections = self._datacenter_graph_model.node[node2]['connections']
             for port, node in connections.items():
                 if node == node1:
                     del connections[port]
         except KeyError as ex:
-            sys.stderr.write("!!!ERROR: Don't exist node '"+ node1 +"' or '" + node2+ "' in model: ")
+            sys.stderr.write("!!!ERROR: Don't exist node '%s' or '%s' in model\n" %(node1,node2))
             raise ex
         except Exception as ex:
             raise ex
@@ -106,7 +109,11 @@ class DataCenter(object):
         self._datacenter_graph_model.remove_edge(node1,node2)
 
     def delete_node(self,node):
-        pass
+        # delete all edge between node and its neighbors
+        for neighbor in self._datacenter_graph_model.neighbors(node):
+            self.delete_edge(node,neighbor)
+        # delete node
+        self._datacenter_graph_model.remove_node(node)
 
 def test1():
     dc = DataCenter()
@@ -152,21 +159,42 @@ def test3():
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
     dc.load_model_by_edges(file_path2)
-    #delete api
-    # print dc._datacenter_graph_model.neighbors(Spine(1))
-    # print dc._datacenter_graph_model.node[Spine(1)]
-    # print dc._datacenter_graph_model.neighbors(Leaf(1))
-    # print dc._datacenter_graph_model.node[Leaf(1)]
-    # dc.delete_edge(Spine(1),Leaf(1))
-    # print '-----------'
-    # print dc._datacenter_graph_model.neighbors(Spine(1))
-    # print dc._datacenter_graph_model.node[Spine(1)]
-    # print dc._datacenter_graph_model.neighbors(Leaf(1))
-    # print dc._datacenter_graph_model.node[Leaf(1)]
+    #delete edge
+    print dc._datacenter_graph_model.neighbors(Spine(1))
+    print dc._datacenter_graph_model.node[Spine(1)]
+    print dc._datacenter_graph_model.neighbors(Leaf(1))
+    print dc._datacenter_graph_model.node[Leaf(1)]
+    dc.delete_edge(Spine(1),Leaf(1))
+    print '-----------'
+    print dc._datacenter_graph_model.neighbors(Spine(1))
+    print dc._datacenter_graph_model.node[Spine(1)]
+    print dc._datacenter_graph_model.neighbors(Leaf(1))
+    print dc._datacenter_graph_model.node[Leaf(1)]
     print dc._datacenter_graph_model.node[Rack(1)]
 
+def test4():
+    dc = DataCenter()
+    file_path = 'testModel.csv'
+    file_path2 = 'dcModel2.csv'
+    dc.load_model_by_edges(file_path2)
+    #delete node
+    print dc.model.nodes()
+    dc.clear_model()
+    print dc.model.nodes()
+    print dc.model.neighbors(Spine(1))
+    print dc.model.neighbors(Leaf(1))
+    print dc.model.neighbors(Leaf(2))
+    print dc.model.neighbors(Leaf(3))
+    print dc.model.neighbors(Leaf(4))
+    print '==-----'
+    dc.delete_node(Spine(1))
+    print dc.model.neighbors(Leaf(1))
+    print dc.model.neighbors(Leaf(2))
+    print dc.model.neighbors(Leaf(3))
+    print dc.model.neighbors(Leaf(4))
+    # dc.delete_edge(Spine(2),Leaf(5))
 
 if __name__=='__main__':
     # test1()
     # test2()
-    test3()
+    test4()
