@@ -104,14 +104,10 @@ class Rack(object):
 
     def __init__(self,ID):
         self.ID = int(ID)
-        self.hosts = set()
-        self.leafs = set()
+        self.hosts_leafs = set()
 
-    def add_host(self,host):
-        self.hosts.add(host)
-
-    def add_leaf(self,leaf):
-        self.leafs.add(leaf)
+    def add_hosts_leafs(self,host):
+        self.hosts_leafs.add(host)
 
     def __str__(self):
         return 'Rack_' + str(self.ID)
@@ -136,7 +132,7 @@ def factory(device_type, ID):
     elif device_type_l == "rack":
         return Rack(ID)
     else:
-        raise TypeError("Don't have the device type: "+ device_type)
+        raise TypeError("Don't have the device type: " + str(device_type))
 
 def test3():
     s1 = Spine(1)

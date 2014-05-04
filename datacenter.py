@@ -33,7 +33,7 @@ class DataCenter(object):
                 if n == node:
                     return n
 
-    def _add_edge(self, args):
+    def _add_connection(self, args):
         device1, id1, port1, device2, id2, port2, link_speed = args
 
         # get exist node or add not exist node in graph model.
@@ -59,17 +59,15 @@ class DataCenter(object):
         if not host == None:
             # add Host to Rack
             rack = self._add_or_get_node_in_model(Models.factory('Rack',host.rack_id))
-            rack.add_host(host)
-            # self._datacenter_graph_model.add_edge(rack,host)
+            rack.add_hosts_leafs(host)
             self._datacenter_graph_model.node[rack]['hosts_leafs'].add(host)
 
             # add Leaf to Rack
             leaf = node2 if host==node1 else node1
-            rack.add_leaf(leaf)
-            # self._datacenter_graph_model.add_edge(rack,leaf)
+            rack.add_hosts_leafs(leaf)
             self._datacenter_graph_model.node[rack]['hosts_leafs'].add(leaf)
 
-    def load_model_by_edges(self, file_path, delimiter=','):
+    def load_model_by_connections(self, file_path, delimiter=','):
         self._datacenter_graph_model = nx.Graph()
 
         with open(file_path,'rb') as csv_model:
@@ -79,9 +77,9 @@ class DataCenter(object):
             for line_num, line in enumerate(reader):
                 try:
                     # eliminate whitespace in words
-                    self._add_edge([e.strip() for e in line])
+                    self._add_connection([e.strip() for e in line])
                 except Exception:
-                    print "!!!ERROR: check model file: '%s', at line: %d" %(file_path,line_num+2)
+                    print >> sys.stderr, "!!!ERROR: check model file: '%s', at line: %d" %(file_path,line_num+2)
                     raise
 
     def load_hosts_attributes(self,file_path):
@@ -93,43 +91,40 @@ class DataCenter(object):
     def clear_model(self):
         self._datacenter_graph_model.clear()
 
-    def delete_edge(self,node1,node2):
+    def delete_connection(self,device1,device2):
         #delete edge from model
         try:
-            self._datacenter_graph_model.remove_edge(node1,node2)
+            self._datacenter_graph_model.remove_edge(device1,device2)
         except Exception as ex:
-            print "!!!ERROR: " + str(ex.args)
+            print "!!!WARNING: %s" %(ex.args[0])
             return
 
         #delete connection attribute in nodes
         try:
-            connections1 = self._datacenter_graph_model.node[node1]['connections']
-            connections2 = self._datacenter_graph_model.node[node2]['connections']
+            connections1 = self._datacenter_graph_model.node[device1]['connections']
+            connections2 = self._datacenter_graph_model.node[device2]['connections']
         except Exception:
             raise
         else:
             # delete connection in node1 and node2
             for port, node in connections1.items():
-                if node == node2:
+                if node == device2:
                     del connections1[port]
             for port, node in connections2.items():
-                if node == node1:
+                if node == device1:
                     del connections2[port]
 
-    def delete_node(self,node):
+    def delete_device(self,device):
         # check if node is valid
-        if node not in self._datacenter_graph_model.nodes():
-            print "!!!ERROR: %s is not in the graph model"
+        if device not in self._datacenter_graph_model.nodes():
+            print "!!!WARNING: '%s' is not in the graph model" %device
             return
 
         # delete all edge between node and its neighbors
-        for neighbor in self._datacenter_graph_model.neighbors(node):
-            self.delete_edge(node,neighbor)
+        for neighbor in self._datacenter_graph_model.neighbors(device):
+            self.delete_connection(device,neighbor)
 
-        self._datacenter_graph_model.remove_node(node)
-
-    # def query_device_on_port_by_keywords(self,**kwargs):
-    #     for k,v in kwargs.items():
+        self._datacenter_graph_model.remove_node(device)
 
     def query_device_on_port(self,device_type,device_id,port,rack_id=None):
 
@@ -138,9 +133,9 @@ class DataCenter(object):
             ret_device = self._datacenter_graph_model.node[device]['connections'][int(port)]
         except KeyError as ex:
             if ex.args[0] == port:
-                print "!!!ERROR: the 'port: %s' of '%s' is not exist or not connected to any device" %(ex,device)
+                print  >> sys.stderr, "!!!ERROR: the 'port: %s' of '%s' is not exist or not connected to any device" %(ex,device)
             else:
-                print "!!!ERROR: '%s' is not exist in model" %ex
+                print  >> sys.stderr, "!!!ERROR: '%s' is not exist in model" %ex
             return None
         except Exception:
             raise
@@ -150,10 +145,10 @@ class DataCenter(object):
                 return ret_device
             else:
                 if Rack(rack_id) not in self._datacenter_graph_model.nodes():
-                    print "!!!ERROR: 'rack_%d' is not exist" %(rack_id)
+                    print  >> sys.stderr, "!!!ERROR: 'rack_%d' is not exist" %(rack_id)
                     return None
                 elif device not in self._datacenter_graph_model.node[Rack(rack_id)]['hosts_leafs']:
-                    print '!!!ERROR: device "%s" is not in rack %d' %(device,rack_id)
+                    print  >> sys.stderr, '!!!ERROR: device "%s" is not in rack %d' %(device,rack_id)
                     return None
                 else:
                     return ret_device
@@ -161,51 +156,54 @@ class DataCenter(object):
     def find_ports(self):
         pass
 
+    def get_device(self,device_type,device_id):
+        device = Models.factory(device_type,device_id)
+        for node in self._datacenter_graph_model.nodes_iter():
+            if node == device:
+                return node
+        return None
+
 def test4():
     dc = DataCenter()
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
-    dc.load_model_by_edges(file_path2)
+    dc.load_model_by_connections(file_path2)
     #delete node
     print dc.model.neighbors(Spine(1))
     print dc.model.neighbors(Leaf(1))
-    print dc.model.neighbors(Leaf(2))
-    print dc.model.neighbors(Leaf(3))
-    print dc.model.neighbors(Leaf(4))
     print '==-----'
-    dc.delete_node(Spine(1))
+    dc.delete_device(Spine(1))
     print dc.model.neighbors(Leaf(1))
-    print dc.model.neighbors(Leaf(2))
-    print dc.model.neighbors(Leaf(3))
-    print dc.model.neighbors(Leaf(4))
-    dc.delete_edge(Spine(2),Leaf(4))
+    print '==-----'
+    dc.delete_connection(Spine(2),Leaf(4))
     print dc.model.neighbors(Spine(2))
+    print '==-----'
+    dc.delete_connection(Spine(3),Leaf(4))
+    print '==-----'
+    dc.delete_device(Spine(3))
+
 
 def test5():
     dc = DataCenter()
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
-    dc.load_model_by_edges(file_path2)
+    dc.load_model_by_connections(file_path2)
     print dc.query_device_on_port('leaf',1,20)
     print dc.query_device_on_port('leaf',10,20)
     print dc.query_device_on_port('host',1,2)
     print dc.query_device_on_port('leaf',1,5,3)
     print dc.query_device_on_port('leaf',1,5,2)
     print dc.query_device_on_port('leaf',1,5,1)
-    # print dc.model.node[Rack(1)]['hosts_leafs']
-    # print dc.model.neighbors(Leaf(1))
 
-    # print dc.model.node[Rack(2)]
-    # print dc.model.node[Host(1)]
-
-    # print dc.query_device_on_port('leaf',12,2)
-    # print dc.query_device_on_port('leaf',1,20)
-    # print dc.query_device_on_port('leaf',1,10,rack_id=3)
-    # print dc.query_device_on_port('leaf',1,10,rack_id=2)
-    # print dc.model.neighbors(Host('r1_2'))
+def test6():
+    dc = DataCenter()
+    file_path = 'testModel.csv'
+    file_path2 = 'dcModel2.csv'
+    dc.load_model_by_connections(file_path2)
 
 if __name__=='__main__':
     # test1()
     # test2()
-    # test4()
-    test5()
+    test4()
+    # test5()
+    # test6()
