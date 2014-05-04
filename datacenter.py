@@ -17,12 +17,13 @@ class DataCenter(object):
         """
         #add not exist node
         if node not in self._datacenter_graph_model.nodes():
-            self._datacenter_graph_model.add_node(node)
             # add attribute for node
             if isinstance(node, Rack):
-                self._datacenter_graph_model[node]['hosts']=set()
+                self._datacenter_graph_model.add_node(node,hosts=set())
+                # self._datacenter_graph_model[node]['hosts']=set()
             else:
-                self._datacenter_graph_model[node]['connections']={}
+                self._datacenter_graph_model.add_node(node,connections={})
+                # self._datacenter_graph_model[node]['connections']={}
             return node
         # get exist node in model
         else:
@@ -43,8 +44,8 @@ class DataCenter(object):
 
         # add edge between two nodes and set nodes' connections attributes
         self._datacenter_graph_model.add_edge(node1,node2,{'link_speed':link_speed})
-        self._datacenter_graph_model[node1]['connections'][int(port1)]=node2
-        self._datacenter_graph_model[node2]['connections'][int(port2)]=node1
+        self._datacenter_graph_model.node[node1]['connections'][int(port1)]=node2
+        self._datacenter_graph_model.node[node2]['connections'][int(port2)]=node1
 
         # if a node is Host, then add the corresponding Rack node
         host = None
@@ -57,7 +58,7 @@ class DataCenter(object):
             rack = self._add_or_get_node_in_model(Models.factory('Rack',host.rack_id))
             rack.add_host(host)
             self._datacenter_graph_model.add_edge(rack,host)
-            self._datacenter_graph_model[rack]['hosts'].add(host)
+            self._datacenter_graph_model.node[rack]['hosts'].add(host)
 
     def load_model_by_edges(self, file_path, delimiter=','):
         self._datacenter_graph_model = nx.Graph()
@@ -87,12 +88,12 @@ class DataCenter(object):
         #delete connection attribute in nodes
         try:
             # delete connection in node1
-            connections = self._datacenter_graph_model[node1]['connections']
-            for port, node in connections:
+            connections = self._datacenter_graph_model.node[node1]['connections']
+            for port, node in connections.items():
                 if node == node2:
                     del connections[port]
-            connections = self._datacenter_graph_model[node2]['connections']
-            for port, node in connections:
+            connections = self._datacenter_graph_model.node[node2]['connections']
+            for port, node in connections.items():
                 if node == node1:
                     del connections[port]
         except KeyError as ex:
@@ -152,10 +153,18 @@ def test3():
     file_path2 = 'dcModel2.csv'
     dc.load_model_by_edges(file_path2)
     #delete api
-    # print Spine(1), dc._datacenter_graph_model[Spine(1)]['connections']
     # print dc._datacenter_graph_model.neighbors(Spine(1))
-    # print Leaf(1), dc._datacenter_graph_model[Leaf(1)]['connections']
-    print dc._datacenter_graph_model.neighbors(Leaf(1))
+    # print dc._datacenter_graph_model.node[Spine(1)]
+    # print dc._datacenter_graph_model.neighbors(Leaf(1))
+    # print dc._datacenter_graph_model.node[Leaf(1)]
+    # dc.delete_edge(Spine(1),Leaf(1))
+    # print '-----------'
+    # print dc._datacenter_graph_model.neighbors(Spine(1))
+    # print dc._datacenter_graph_model.node[Spine(1)]
+    # print dc._datacenter_graph_model.neighbors(Leaf(1))
+    # print dc._datacenter_graph_model.node[Leaf(1)]
+    print dc._datacenter_graph_model.node[Rack(1)]
+
 
 if __name__=='__main__':
     # test1()
