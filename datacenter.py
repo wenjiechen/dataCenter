@@ -1,6 +1,6 @@
 __author__ = 'wenjie'
-from Models import Host, Spine, Leaf, Rack
-import Models
+from Devices import Host, Spine, Leaf, Rack
+import Devices
 import networkx as nx
 import csv,sys
 
@@ -37,8 +37,8 @@ class DataCenter(object):
         device1, id1, port1, device2, id2, port2, link_speed = args
 
         # get exist node or add not exist node in graph model.
-        node1 = self._add_or_get_node_in_model(Models.factory(device1,id1))
-        node2 = self._add_or_get_node_in_model(Models.factory(device2,id2))
+        node1 = self._add_or_get_node_in_model(Devices.factory(device1,id1))
+        node2 = self._add_or_get_node_in_model(Devices.factory(device2,id2))
 
         # add link in node
         node1.add_link(port1,node2)
@@ -58,7 +58,7 @@ class DataCenter(object):
 
         if host is not None:
             # add Host to Rack
-            rack = self._add_or_get_node_in_model(Models.factory('Rack',host.rack_id))
+            rack = self._add_or_get_node_in_model(Devices.factory('Rack',host.rack_id))
             rack.add_hosts_leafs(host)
             self._datacenter_graph_model.node[rack]['hosts_leafs'].add(host)
 
@@ -132,7 +132,16 @@ class DataCenter(object):
         # delete device from graph model
         self._datacenter_graph_model.remove_node(device)
 
-    def _is_device_on_rack(self,device,rack):
+        # delete device from rack
+        if type(device) in (Leaf,Host):
+            for node in self._datacenter_graph_model.nodes_iter():
+                if isinstance(node,Rack):
+                    try:
+                        self._datacenter_graph_model.node[node]['hosts_leafs'].remove(device)
+                    except Exception:
+                        pass
+
+    def _is_device_in_rack(self,device,rack):
         """
 
         :param device:
@@ -174,7 +183,7 @@ class DataCenter(object):
             if rack is None:
                 return ret_device
             else:
-                return ret_device if self._is_device_on_rack(device,rack) else None
+                return ret_device if self._is_device_in_rack(device,rack) else None
 
     def query_connected_ports(self,device_queried,device2,rack1=None,rack2=None):
         """
@@ -188,9 +197,9 @@ class DataCenter(object):
         # check if devices are exist and placed on racks
         if not self._is_device_exist(device_queried) or not self._is_device_exist(device2):
             return None
-        if rack1 and not self._is_device_on_rack(device_queried,rack1):
+        if rack1 is not None and not self._is_device_in_rack(device_queried,rack1):
             return None
-        if rack2 and not self._is_device_on_rack(device2,rack2):
+        if rack2 is not None and not self._is_device_in_rack(device2,rack2):
             return None
 
         # find the ports of device1 connected to device2
@@ -203,7 +212,7 @@ class DataCenter(object):
                 return node
         return None
 
-    def query_paths(self,source,target):
+    def query_all_paths(self,source,target):
         return nx.all_shortest_paths(self._datacenter_graph_model, source, target)
 
 def test4():
@@ -227,6 +236,8 @@ def test4():
     # dc.delete_device('spine1')
     # dc.delete_link('spine1','leaf1')
     dc.delete_link(Spine(2),Host(1))
+    dc.delete_device(Host(2))
+    print dc.model.nodes()
 
 def test5():
     dc = DataCenter()
@@ -271,10 +282,12 @@ def test7():
     dc.load_model_by_links(file_path2)
     # l1 = dc.get_device(Leaf(1))
     # print l1.links
-    gen = dc.query_paths(Host(1),Host(12))
+    # gen = dc.query_all_paths(Host(1),Host(12))
+    # gen = dc.query_all_paths(Spine(1),Host(12))
+    gen = dc.query_all_paths(Leaf(1),Host(12))
     print '\n'.join(str(p) for p in gen)
 
-if __name__=='__main__':
+if __name__ == '__main__':
     # test4()
     # test5()
     # test6()
