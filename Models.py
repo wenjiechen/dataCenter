@@ -6,15 +6,15 @@ class Switch(object):
 
     def __init__(self,ID):
         self._ID = int(ID)
-        self.connections = {}
+        self.links = {}
 
     # ID is read only attribute
     @property
     def ID(self):
         return self._ID
 
-    def add_connection(self, port, device):
-        self.connections[int(port)] = device
+    def add_link(self, port, device):
+        self.links[int(port)] = device
 
     def __repr__(self):
         return self.__str__()
@@ -57,7 +57,7 @@ class Host(object):
         self._rack_id = None
         self._ID = None
         self._decompose_complex_ID(complex_ID)
-        self.connections = {}
+        self.links = {}
         self.MACs = MACs
         self.IPs = IPs
 
@@ -81,8 +81,8 @@ class Host(object):
         else:
             raise ValueError("'%s' not valid ID for Host." %(complex_ID))
 
-    def add_connection(self,port,device):
-        self.connections[int(port)] = device
+    def add_link(self,port,device):
+        self.links[int(port)] = device
 
     def __str__(self):
         # return 'Host_' + str(self.ID) + ', Rack_' + str(self.rack_num) + ', MACs: '+str(self.MACs) + ', IPs: ' + str(self.IPs)
