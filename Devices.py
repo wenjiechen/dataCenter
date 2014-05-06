@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-
+All devices used in data center model
 """
 __author__ = 'Wenjie Chen'
 import abc
 import re
 
 class Switch(object):
-    """abstract base class of Switch.
+    """Abstract base class of Switch.
+
 
     """
     __metaclass__ = abc.ABCMeta
