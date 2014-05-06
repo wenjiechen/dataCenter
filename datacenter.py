@@ -1,6 +1,6 @@
 __author__ = 'wenjie'
-from Devices import Host, Spine, Leaf, Rack
-import Devices
+from devicemodels import Host, Spine, Leaf, Rack
+import devicemodels
 import networkx as nx
 import csv,sys
 
@@ -37,8 +37,8 @@ class DataCenter(object):
         device1, id1, port1, device2, id2, port2, link_speed = args
 
         # get exist node or add not exist node in graph model.
-        device1 = self._add_or_get_device_in_model(Devices.factory(device1,id1))
-        device2 = self._add_or_get_device_in_model(Devices.factory(device2,id2))
+        device1 = self._add_or_get_device_in_model(devicemodels.factory(device1,id1))
+        device2 = self._add_or_get_device_in_model(devicemodels.factory(device2,id2))
 
         # add link in node
         device1.add_link(port1,device2)
@@ -58,7 +58,7 @@ class DataCenter(object):
 
         if host is not None:
             # add Host to Rack
-            rack = self._add_or_get_device_in_model(Devices.factory('Rack',host.rack_id))
+            rack = self._add_or_get_device_in_model(devicemodels.factory('Rack',host.rack_id))
             rack.add_hosts_leafs(host)
             self._graph_model.node[rack]['hosts_leafs'].add(host)
 
@@ -67,7 +67,7 @@ class DataCenter(object):
             rack.add_hosts_leafs(leaf)
             self._graph_model.node[rack]['hosts_leafs'].add(leaf)
 
-    def load_model_from_files_by_links(self, file_path1, *file_paths,**kwargs):
+    def load_model_from_files(self, file_path1, *file_paths,**kwargs):
 
         customized_delimiter = kwargs['delimiter'] if 'delimiter' in kwargs.keys() else ','
         paths = [file for file in file_paths]
@@ -261,7 +261,7 @@ def test4():
     dc = DataCenter()
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files_by_links(file_path2)
+    dc.load_model_from_files(file_path2)
     #delete node
     print dc.model.neighbors(Spine(1))
     print dc.model.neighbors(Leaf(1))
@@ -287,7 +287,7 @@ def test5():
     dc = DataCenter()
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files_by_links(file_path2)
+    dc.load_model_from_files(file_path2)
     print dc.query_device_on_port(Leaf(1),20)
     print dc.query_device_on_port(Leaf(10),20)
     print dc.query_device_on_port(Host(1),2)
@@ -305,7 +305,7 @@ def test6():
     dc = DataCenter()
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files_by_links(file_path2)
+    dc.load_model_from_files(file_path2)
     print dc.query_connected_ports(Leaf(1),Spine(3))
     # print dc.query_connected_ports(Leaf(1),'spine3')
     # print dc.query_connected_ports(Leaf(5),Spine(1))
@@ -323,7 +323,7 @@ def test7():
     dc = DataCenter()
     file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files_by_links(file_path2)
+    dc.load_model_from_files(file_path2)
     # l1 = dc.get_device(Leaf(1))
     # print l1.links
     # gen = dc.query_all_paths(Host(1),Host(12))
@@ -335,25 +335,25 @@ def test8():
     dc = DataCenter()
     file_path = 'dcModel3.csv'
     file_path2 = 'dcModel2.csv'
-    # dc.load_model_from_files_by_links(file_path)
-    # dc.load_model_from_files_by_links(file_path2)
-    # dc.load_model_from_files_by_links(file_path,file_path2,delimiter=',')
-    dc.load_model_from_files_by_links(file_path,file_path2)
+    # dc.load_model_from_files(file_path)
+    # dc.load_model_from_files(file_path2)
+    # dc.load_model_from_files(file_path,file_path2,delimiter=',')
+    dc.load_model_from_files(file_path,file_path2)
     print dc.model.nodes()
     dc.clear_model()
-    dc.load_model_from_files_by_links(file_path,'testModel.csv',file_path2,delimiter=',')
+    dc.load_model_from_files(file_path,'testModel.csv',file_path2,delimiter=',')
     print dc.model.nodes()
     dc.clear_model()
-    dc.load_model_from_files_by_links(file_path,delimiter=',')
+    dc.load_model_from_files(file_path,delimiter=',')
     print dc.model.nodes()
 
 def test9():
     dc = DataCenter()
     file_path2 = 'dcModel2.csv'
-    # dc.load_model_from_files_by_links(file_path)
-    # dc.load_model_from_files_by_links(file_path2)
-    # dc.load_model_from_files_by_links(file_path,file_path2,delimiter=',')
-    dc.load_model_from_files_by_links(file_path2)
+    # dc.load_model_from_files(file_path)
+    # dc.load_model_from_files(file_path2)
+    # dc.load_model_from_files(file_path,file_path2,delimiter=',')
+    dc.load_model_from_files(file_path2)
     dc.break_link(Leaf(1),Host(1))
     print "host1's links", dc.model.node[Host(1)]['links']
     print "host1's neighbors", dc.model.neighbors(Host(1))
@@ -364,9 +364,9 @@ def test9():
 
 
 if __name__ == '__main__':
-    # test4()
-    # test5()
-    # test6()
-    # test7()
-    # test8()
+    test4()
+    test5()
+    test6()
+    test7()
+    test8()
     test9()
