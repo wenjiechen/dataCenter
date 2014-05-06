@@ -106,7 +106,7 @@ class DataCenter(object):
         else:
             return True
 
-    def delete_link(self,device1,device2):
+    def remove_link(self,device1,device2):
         #delete edge from model
         try:
             self._graph_model.remove_edge(device1,device2)
@@ -126,14 +126,14 @@ class DataCenter(object):
                 if node == device1:
                     del links2[port]
 
-    def delete_device(self,device):
+    def remove_device(self,device):
         # check if node is valid
         if not self._is_device_exist(device):
             return
 
         # delete all edge between node and its neighbors
         for neighbor in self._graph_model.neighbors(device):
-            self.delete_link(device,neighbor)
+            self.remove_link(device,neighbor)
 
         # delete device from graph model
         self._graph_model.remove_node(device)
@@ -141,11 +141,9 @@ class DataCenter(object):
         # delete device from rack
         if type(device) in (Leaf,Host):
             for node in self._graph_model.nodes_iter():
-                if isinstance(node,Rack):
-                    try:
-                        self._graph_model.node[node]['hosts_leafs'].remove(device)
-                    except Exception:
-                        pass
+                if isinstance(node,Rack) and device in self._graph_model.node[node]['hosts_leafs']:
+                    self._graph_model.node[node]['hosts_leafs'].remove(device)
+                    break
 
     def _is_device_in_rack(self,device,rack):
         """
@@ -221,6 +219,16 @@ class DataCenter(object):
     def query_all_paths(self,source,target):
         return nx.all_shortest_paths(self._graph_model, source, target)
 
+    def break_link(self,device1,device2):
+        """remove link between two devices. only used for testing link check
+
+
+        """
+        pass
+
+    def link_check(self):
+        pass
+
 def test4():
     dc = DataCenter()
     file_path = 'testModel.csv'
@@ -230,19 +238,21 @@ def test4():
     print dc.model.neighbors(Spine(1))
     print dc.model.neighbors(Leaf(1))
     print '==-----'
-    dc.delete_device(Spine(1))
+    dc.remove_device(Spine(1))
     print dc.model.neighbors(Leaf(1))
     print '==-----'
-    dc.delete_link(Spine(2),Leaf(4))
+    dc.remove_link(Spine(2),Leaf(4))
     print dc.model.neighbors(Spine(2))
     print '==-----'
-    dc.delete_link(Spine(3),Leaf(4))
+    dc.remove_link(Spine(3),Leaf(4))
     print '==-----'
-    # dc.delete_device(Spine(3))
-    # dc.delete_device('spine1')
-    # dc.delete_link('spine1','leaf1')
-    dc.delete_link(Spine(2),Host(1))
-    dc.delete_device(Host(2))
+    # dc.remove_device(Spine(3))
+    # dc.remove_device('spine1')
+    # dc.remove_link('spine1','leaf1')
+    dc.remove_link(Spine(2),Host(1))
+    dc.remove_device(Host(2))
+    print 'remove host(2), device on rack1 is',
+    print Host(2) in dc.model.node[Rack(1)]['hosts_leafs']
     print dc.model.nodes()
 
 def test5():
@@ -259,7 +269,7 @@ def test5():
     # print dc.query_device_on_port('leaf1',5,Rack(1))
     # print dc.query_device_on_port(Leaf(1),5,'rack1')
     print dc.query_device_on_port(Leaf(3),5,Rack(2))
-    dc.delete_link(Leaf(3),Host(13))
+    dc.remove_link(Leaf(3),Host(13))
     print dc.query_device_on_port(Leaf(3),5,Rack(2))
 
 
@@ -309,10 +319,19 @@ def test8():
     dc.load_model_from_files_by_links(file_path,delimiter=',')
     print dc.model.nodes()
 
+def test9():
+    dc = DataCenter()
+    file_path2 = 'dcModel2.csv'
+    # dc.load_model_from_files_by_links(file_path)
+    # dc.load_model_from_files_by_links(file_path2)
+    # dc.load_model_from_files_by_links(file_path,file_path2,delimiter=',')
+    dc.load_model_from_files_by_links(file_path2)
+
 
 if __name__ == '__main__':
     test4()
-    test5()
-    test6()
-    test7()
-    test8()
+    # test5()
+    # test6()
+    # test7()
+    # test8()
+    # test9()
