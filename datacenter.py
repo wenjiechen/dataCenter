@@ -126,7 +126,13 @@ class DataCenter(object):
                 if node == device1:
                     del links2[port]
 
-    def remove_device(self,device):
+    def remove_devices(self,device,*devices):
+        device_list = [dev for dev in devices]
+        device_list.append(device)
+        for dev in device_list:
+            self._remove_device(dev)
+
+    def _remove_device(self,device):
         # check if node is valid
         if not self._is_device_exist(device):
             return
@@ -173,6 +179,9 @@ class DataCenter(object):
         :return:
         :raise:
         """
+        if rack is not None and not self._is_device_in_rack(device,rack):
+            return None
+
         try:
             # find the device on port
             ret_device = self._graph_model.node[device]['links'][int(port)]
@@ -182,12 +191,8 @@ class DataCenter(object):
             return None
         except Exception:
             raise
-        # found the device and check if it's valid
         else:
-            if rack is None:
-                return ret_device
-            else:
-                return ret_device if self._is_device_in_rack(device,rack) else None
+            return ret_device
 
     def query_connected_ports(self,device_queried,device2,rack1=None,rack2=None):
         """
@@ -206,7 +211,7 @@ class DataCenter(object):
         if rack2 is not None and not self._is_device_in_rack(device2,rack2):
             return None
 
-        # find the ports of device1 connected to device2
+        # find the ports of device_queried connected to device2
         links1 = self._graph_model.node[device_queried]['links']
         return (port for port, device in links1.items() if device == device2)
 
@@ -220,14 +225,16 @@ class DataCenter(object):
         return nx.all_shortest_paths(self._graph_model, source, target)
 
     def break_link(self,device1,device2):
-        """remove link between two devices. only used for testing link check
+        """remove link between two devices. only used for testing link_check()
 
 
         """
+
         pass
 
     def link_check(self):
         pass
+
 
 def test4():
     dc = DataCenter()
@@ -238,7 +245,7 @@ def test4():
     print dc.model.neighbors(Spine(1))
     print dc.model.neighbors(Leaf(1))
     print '==-----'
-    dc.remove_device(Spine(1))
+    dc.remove_devices(Spine(1),Host(10))
     print dc.model.neighbors(Leaf(1))
     print '==-----'
     dc.remove_link(Spine(2),Leaf(4))
@@ -246,11 +253,11 @@ def test4():
     print '==-----'
     dc.remove_link(Spine(3),Leaf(4))
     print '==-----'
-    # dc.remove_device(Spine(3))
-    # dc.remove_device('spine1')
+    # dc.remove_devices(Spine(3))
+    # dc.remove_devices('spine1')
     # dc.remove_link('spine1','leaf1')
     dc.remove_link(Spine(2),Host(1))
-    dc.remove_device(Host(2))
+    dc.remove_devices(Host(2))
     print 'remove host(2), device on rack1 is',
     print Host(2) in dc.model.node[Rack(1)]['hosts_leafs']
     print dc.model.nodes()
@@ -329,8 +336,8 @@ def test9():
 
 
 if __name__ == '__main__':
-    test4()
-    # test5()
+    # test4()
+    test5()
     # test6()
     # test7()
     # test8()
