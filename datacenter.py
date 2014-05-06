@@ -225,16 +225,37 @@ class DataCenter(object):
         return nx.all_shortest_paths(self._graph_model, source, target)
 
     def break_link(self,device1,device2):
-        """remove link between two devices. only used for testing link_check()
+        """break link between two devices. only used for testing link_check()
 
-
+        don't use for other purpose, which will cause a non consistent model state
         """
+        try:
+            self._graph_model.remove_edge(device1,device2)
+        except Exception as ex:
+            if self._is_device_exist(device1) and self._is_device_exist(device2):
+                # link doesn't exist
+                print "WARNING: %s" %(ex.args[0])
+        print "break link between '%s' and '%s'" %(device1,device2)
 
-        pass
+    def all_devices(self):
+        yield self._graph_model.nodes()
+
+    def all_links(self):
+        yield self._graph_model.edges()
 
     def link_check(self):
-        pass
-
+        #check each Spine, Leaf, Host
+        for device in ( node for node in self._graph_model.nodes_iter() if type(node) is not Rack):
+            links = self._graph_model.node[device]['links']
+            for port, device2 in links.items():
+                if device2 not in self._graph_model.neighbors(device):
+                    print "WARNING: link between '%s' and '%s' is broken" %(device,device2)
+                    del links[port]
+                    # delete link in device2's link table
+                    links2 = self._graph_model.node[device2]['links']
+                    for port2,device_tmp in links2.items():
+                        if device_tmp == device:
+                            del links2[port2]
 
 def test4():
     dc = DataCenter()
@@ -333,12 +354,19 @@ def test9():
     # dc.load_model_from_files_by_links(file_path2)
     # dc.load_model_from_files_by_links(file_path,file_path2,delimiter=',')
     dc.load_model_from_files_by_links(file_path2)
+    dc.break_link(Leaf(1),Host(1))
+    print "host1's links", dc.model.node[Host(1)]['links']
+    print "host1's neighbors", dc.model.neighbors(Host(1))
+    print "leaf1's links ", dc.model.node[Leaf(1)]['links']
+    dc.link_check()
+    print dc.model.node[Host(1)]['links']
+    print dc.model.node[Leaf(1)]['links']
 
 
 if __name__ == '__main__':
     # test4()
-    test5()
+    # test5()
     # test6()
     # test7()
     # test8()
-    # test9()
+    test9()
