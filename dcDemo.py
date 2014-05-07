@@ -116,14 +116,14 @@ def test10():
     dc = DataCenter()
     file_path1 = 'testBadModel.csv'
     file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files(file_path1)
+    dc.load_model_from_files(file_path2)
     print dc.all_devices()
 
 if __name__ == '__main__':
-    # test4()
-    # test5()
-    # test6()
-    # test7()
-    # test8()
+    test4()
+    test5()
+    test6()
+    test7()
+    test8()
     test9()
-    # test10()
+    test10()
