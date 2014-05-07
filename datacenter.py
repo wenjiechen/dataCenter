@@ -2,7 +2,9 @@ __author__ = 'wenjie'
 from devicemodels import Host, Spine, Leaf, Rack
 import devicemodels
 import networkx as nx
-import csv,sys
+import csv
+import sys
+import re
 
 class DataCenter(object):
 
@@ -37,8 +39,8 @@ class DataCenter(object):
         device1, id1, port1, device2, id2, port2, link_speed = args
 
         # get exist node or add not exist node in graph model.
-        device1 = self._add_or_get_device_in_model(devicemodels.factory(device1,id1))
-        device2 = self._add_or_get_device_in_model(devicemodels.factory(device2,id2))
+        device1 = self._add_or_get_device_in_model(devicemodels.devices_factory(device1,id1))
+        device2 = self._add_or_get_device_in_model(devicemodels.devices_factory(device2,id2))
 
         # add link in node
         device1.add_link(port1,device2)
@@ -58,7 +60,7 @@ class DataCenter(object):
 
         if host is not None:
             # add Host to Rack
-            rack = self._add_or_get_device_in_model(devicemodels.factory('Rack',host.rack_id))
+            rack = self._add_or_get_device_in_model(devicemodels.devices_factory('Rack',host.rack_id))
             rack.add_hosts_leafs(host)
             self._graph_model.node[rack]['hosts_leafs'].add(host)
 
@@ -270,3 +272,39 @@ class DataCenter(object):
     def devices_in_rack(self,rack):
         if self._is_device_exist(rack):
             return self._graph_model.node[rack]['hosts_leafs']
+
+    def _convert_device_input(self,device_input):
+        #convert a input string to device object
+        if type(device_input) is not str:
+            return device_input
+        valid_ptn = re.compile(r'[a-zA-z]+_\d+$')
+
+        if valid_ptn.match(device_input) is None:
+            raise ValueError("%s is not valid input pattern."
+                             "\nPlease input like 'host_1', no matter lower "
+                             "or upper case" %device_input)
+
+        type_ptn = re.compile(r'[a-zA-Z]+')
+        device_type = type_ptn.match(device_input).group()
+        id_ptn = re.compile(r'\d+')
+        id = id_ptn.findall(device_input)[0]
+        return devicemodels.devices_factory(device_type,id)
+
+def test11():
+    dc = DataCenter()
+    file_path1 = 'testBadModel.csv'
+    file_path2 = 'dcModel2.csv'
+    dc.load_model_from_files(file_path2)
+    # print dc.all_devices()
+    print dc._convert_device_input('spine_1')
+    print dc._convert_device_input('host_1')
+    print dc._convert_device_input('leaf_10')
+    print dc._convert_device_input('rack_1')
+    print dc._convert_device_input(Host(100))
+    # print dc._convert_device_input('Host(100)')
+    # print dc._convert_device_input('host1')
+    # print dc._convert_device_input('host_qq_sd2')
+
+if __name__ == '__main__':
+    test11()
+

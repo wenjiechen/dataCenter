@@ -30,12 +30,12 @@ class Switch(object):
 
     @abc.abstractmethod
     def __eq__(self, other):
-        """Override, in order to be used by networks"""
+        """Override in subclass, in order to be used by networks"""
         return
 
     @abc.abstractmethod
     def __hash__(self):
-        """override, in order to be used by networks"""
+        """override in subclass, in order to be used by networks"""
         return
 
 class Spine(Switch):
@@ -94,19 +94,15 @@ class Host(object):
         self.links[int(port)] = device
 
     def __str__(self):
-        # return 'Host_' + str(self.ID) + ', Rack_' + str(self.rack_num) + ', MACs: '+str(self.MACs) + ', IPs: ' + str(self.IPs)
-        # return 'Host_' + str(self.ID) + '@Rack_' + str(self.rack_id)
         return 'Host_' + str(self.ID)
 
     def __repr__(self):
         return self.__str__()
 
     def __eq__(self, other):
-        # return isinstance(other, Host) and self.ID == other.ID and self.rack_id == other.rack_id
         return isinstance(other, Host) and self.ID == other.ID
 
     def __hash__(self):
-        # return hash('host') + hash(17 + self.ID*31 + self.rack_id)
         return hash('host') + hash(17 + self.ID)
 
 class Rack(object):
@@ -130,7 +126,7 @@ class Rack(object):
     def __hash__(self):
         return hash('rack') + hash(17 + self.ID)
 
-def factory(device_type, ID):
+def devices_factory(device_type, ID):
     device_type_l = device_type.lower()
     if device_type_l == "spine":
         return Spine(ID)
@@ -148,7 +144,7 @@ def test3():
     s2 = Spine(2)
     d = {s1:100, s2:200}
     print d[Spine(1)]
-    print d[factory('Spine',2)]
+    print d[devices_factory('Spine',2)]
     # s1.ID = 200
     print s1
 

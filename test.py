@@ -50,11 +50,11 @@ class TestDataCenter(unittest.TestCase):
         with self.assertRaises(Exception):
             self.dc.load_model_from_files('testBadModel.csv')
 
-    def test_access_device_with_wrong_type(self):
-        '''access device using string, raise TypeError
-        '''
-        with self.assertRaises(TypeError):
-            self.dc.remove_devices('spine1')
+    # def test_access_device_with_wrong_type(self):
+    #     '''access device using string, raise TypeError
+    #     '''
+    #     with self.assertRaises(TypeError):
+    #         self.dc.remove_devices('spine1')
 
     def test_remove_link(self):
         '''remove link Spine(1)-Leaf(1), check if it still exists in model.
