@@ -1,0 +1,9 @@
+Device, ID, Port, Device, ID, Port,Link_Speed
+Spine,3, 1, Leaf, 1, 1,10G
+Spine,3, 2, Leaf, 2, 1,10G
+Spine,3, 3, Leaf, 3, 1,10G
+Spine,3, 4, Leaf, 4, 1,10G
+Spine,4, 1, Leaf, 1, 2,10G
+Spine,4, 2, Leaf, 2, 2,10G
+Spine,4, 3, Leaf, 3, 2,10G
+Spine,4, 4, Leaf, 4, 2,10G

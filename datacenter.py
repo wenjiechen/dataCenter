@@ -82,8 +82,9 @@ class DataCenter(object):
                     try:
                         # eliminate whitespace in words
                         self._add_link([field.strip() for field in line])
-                    except Exception as ex:
-                        raise Exception("%s\nCheck model file: '%s', at line: %d" %(ex.args[0],file_path,line_num+2))
+                    except Exception:
+                        print >> sys.stderr,"Check model file: '%s', at line: %d" %(file_path,line_num+2)
+                        raise
 
 
 
@@ -93,13 +94,13 @@ class DataCenter(object):
     def load_model_by_nodes(self):
         pass
 
-    def clear_model(self):
+    def clean_model(self):
         self._graph_model.clear()
 
     def _is_device_exist(self,device):
         if device not in self._graph_model.nodes():
             if type(device) in (Spine, Leaf, Host):
-                print "WARNING: '%s' is not in the graph model" %device
+                print >> sys.stderr, "WARNING: '%s' is not in the graph model" %device
                 return False
             else:
                 raise TypeError("Don't support: '%s'" %type(device))
@@ -113,7 +114,7 @@ class DataCenter(object):
         except Exception as ex:
             if self._is_device_exist(device1) and self._is_device_exist(device2):
                 # link doesn't exist
-                print "WARNING: %s" %(ex.args[0])
+                print >> sys.stderr, "WARNING: %s" %(ex.args[0])
             return
         else:
             # delete link attribute in node1 and node2
@@ -162,10 +163,10 @@ class DataCenter(object):
             if not isinstance(rack,Rack):
                 raise TypeError("Don't support '%s', only support 'Rack' type" %(type(rack)))
             else:
-                print "WARNING: '%s' is not exist" %(rack)
+                print >> sys.stderr, "WARNING: '%s' is not exist" %(rack)
                 return False
         elif device not in self._graph_model.node[rack]['hosts_leafs']:
-            print 'WARNING: device "%s" is not in %s' %(device,rack)
+            print >> sys.stderr, 'WARNING: device "%s" is not in %s' %(device,rack)
             return False
         else:
             return True
@@ -187,7 +188,7 @@ class DataCenter(object):
             ret_device = self._graph_model.node[device]['links'][int(port)]
         except KeyError as ex:
             if self._is_device_exist(device) and ex.args[0] == port:
-                print "WARNING: the 'port: %s' of '%s' is not exist or not connected to any device" %(ex,device)
+                print >> sys.stderr, "WARNING: the 'port: %s' of '%s' is not exist or not connected to any device" %(ex,device)
             return None
         except Exception:
             raise
@@ -234,139 +235,38 @@ class DataCenter(object):
         except Exception as ex:
             if self._is_device_exist(device1) and self._is_device_exist(device2):
                 # link doesn't exist
-                print "WARNING: %s" %(ex.args[0])
-        print "break link between '%s' and '%s'" %(device1,device2)
-
-    def all_devices(self):
-        yield self._graph_model.nodes()
-
-    def all_links(self):
-        yield self._graph_model.edges()
+                print >> sys.stderr,"WARNING: %s" %(ex.args[0])
+        # print "break link between '%s' and '%s'" %(device1,device2)
 
     def link_check(self):
         #check each Spine, Leaf, Host
+        break_pairs=[]
         for device in ( node for node in self._graph_model.nodes_iter() if type(node) is not Rack):
             links = self._graph_model.node[device]['links']
             for port, device2 in links.items():
                 if device2 not in self._graph_model.neighbors(device):
-                    print "WARNING: link between '%s' and '%s' is broken" %(device,device2)
+                    break_pairs.append((device,device2))
+                    print >> sys.stderr, "WARNING: link between '%s' and '%s' is broken" %(device,device2)
                     del links[port]
                     # delete link in device2's link table
                     links2 = self._graph_model.node[device2]['links']
                     for port2,device_tmp in links2.items():
                         if device_tmp == device:
                             del links2[port2]
+            return break_pairs
 
-def test4():
-    dc = DataCenter()
-    file_path = 'testModel.csv'
-    file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files(file_path2)
-    #delete node
-    print dc.model.neighbors(Spine(1))
-    print dc.model.neighbors(Leaf(1))
-    print '==-----'
-    dc.remove_devices(Spine(1),Host(10))
-    print dc.model.neighbors(Leaf(1))
-    print '==-----'
-    dc.remove_link(Spine(2),Leaf(4))
-    print dc.model.neighbors(Spine(2))
-    print '==-----'
-    dc.remove_link(Spine(3),Leaf(4))
-    print '==-----'
-    # dc.remove_devices(Spine(3))
-    # dc.remove_devices('spine1')
-    # dc.remove_link('spine1','leaf1')
-    dc.remove_link(Spine(2),Host(1))
-    dc.remove_devices(Host(2))
-    print 'remove host(2), device on rack1 is',
-    print Host(2) in dc.model.node[Rack(1)]['hosts_leafs']
-    print dc.model.nodes()
+    def all_devices(self):
+        return self._graph_model.nodes()
 
-def test5():
-    dc = DataCenter()
-    file_path = 'testModel.csv'
-    file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files(file_path2)
-    print dc.query_device_on_port(Leaf(1),20)
-    print dc.query_device_on_port(Leaf(10),20)
-    print dc.query_device_on_port(Host(1),2)
-    print dc.query_device_on_port(Leaf(1),5,Rack(3))
-    print dc.query_device_on_port(Leaf(1),5,Rack(2))
-    print dc.query_device_on_port(Leaf(1),5,Rack(1))
-    # print dc.query_device_on_port('leaf1',5,Rack(1))
-    # print dc.query_device_on_port(Leaf(1),5,'rack1')
-    print dc.query_device_on_port(Leaf(3),5,Rack(2))
-    dc.remove_link(Leaf(3),Host(13))
-    print dc.query_device_on_port(Leaf(3),5,Rack(2))
+    def all_links(self):
+        return self._graph_model.edges()
 
+    def all_links_iter(self):
+        yield self._graph_model.edges()
 
-def test6():
-    dc = DataCenter()
-    file_path = 'testModel.csv'
-    file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files(file_path2)
-    print dc.query_connected_ports(Leaf(1),Spine(3))
-    # print dc.query_connected_ports(Leaf(1),'spine3')
-    # print dc.query_connected_ports(Leaf(5),Spine(1))
-    # print dc.query_connected_ports('leaf1',Spine(1))
-    print dc.query_connected_ports(Leaf(1),Host(2),Rack(2),Rack(2))
-    print dc.query_connected_ports(Leaf(1),Host(2),Rack(1),Rack(2))
-    g1 =  dc.query_connected_ports(Leaf(1),Host(2),Rack(1),Rack(1))
-    print g1.next()
-    gg = dc.query_connected_ports(Leaf(1),Spine(1))
-    print '\n'.join(str(port) for port in gg)
-    # for e in nx.edges_iter(dc.model,(Leaf(1),Spine(1))):
-    #     print e
+    def all_devices_iter(self):
+        yield self._graph_model.nodes()
 
-def test7():
-    dc = DataCenter()
-    file_path = 'testModel.csv'
-    file_path2 = 'dcModel2.csv'
-    dc.load_model_from_files(file_path2)
-    # l1 = dc.get_device(Leaf(1))
-    # print l1.links
-    # gen = dc.query_all_paths(Host(1),Host(12))
-    # gen = dc.query_all_paths(Spine(1),Host(12))
-    gen = dc.query_all_paths(Leaf(1),Host(12))
-    print '\n'.join(str(p) for p in gen)
-
-def test8():
-    dc = DataCenter()
-    file_path = 'dcModel3.csv'
-    file_path2 = 'dcModel2.csv'
-    # dc.load_model_from_files(file_path)
-    # dc.load_model_from_files(file_path2)
-    # dc.load_model_from_files(file_path,file_path2,delimiter=',')
-    dc.load_model_from_files(file_path,file_path2)
-    print dc.model.nodes()
-    dc.clear_model()
-    dc.load_model_from_files(file_path,'testModel.csv',file_path2,delimiter=',')
-    print dc.model.nodes()
-    dc.clear_model()
-    dc.load_model_from_files(file_path,delimiter=',')
-    print dc.model.nodes()
-
-def test9():
-    dc = DataCenter()
-    file_path2 = 'dcModel2.csv'
-    # dc.load_model_from_files(file_path)
-    # dc.load_model_from_files(file_path2)
-    # dc.load_model_from_files(file_path,file_path2,delimiter=',')
-    dc.load_model_from_files(file_path2)
-    dc.break_link(Leaf(1),Host(1))
-    print "host1's links", dc.model.node[Host(1)]['links']
-    print "host1's neighbors", dc.model.neighbors(Host(1))
-    print "leaf1's links ", dc.model.node[Leaf(1)]['links']
-    dc.link_check()
-    print dc.model.node[Host(1)]['links']
-    print dc.model.node[Leaf(1)]['links']
-
-
-if __name__ == '__main__':
-    test4()
-    test5()
-    test6()
-    test7()
-    test8()
-    test9()
+    def devices_in_rack(self,rack):
+        if self._is_device_exist(rack):
+            return self._graph_model.node[rack]['hosts_leafs']

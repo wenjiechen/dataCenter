@@ -1,0 +1,3 @@
+Type, ID, Port, Type, ID, Port,Link_Speed
+Host,r1_3,1,Leaf,1,4,1G
+Host,r1_3,2,Leaf,2,4,1G
