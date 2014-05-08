@@ -18,16 +18,19 @@ if __name__=='__main__':
                         ('leaf3','host20'),('host18','leaf4'),
                         ('leaf2','host8'),('leaf4','host16')]
 
-    # linkChecker run every 0.5 second
-    link_checker = LinkChecker(dc,0.5)
+    # linkChecker run every 0.25 second
+    link_checker = LinkChecker(dc,0.25)
     link_checker.start()
 
     # load a new model per second, then break two links
     for i in range(0,5):
         dc.load_model_from_files(file)
+        # break link1
         dc.break_link(*links_to_be_broken[2*i-1])
+        time.sleep(0.5)
+        # break link2
         dc.break_link(*links_to_be_broken[2*i])
-        time.sleep(1)
+        time.sleep(0.5)
         dc.clean_datacenter()
 
     #stop linkChecker
