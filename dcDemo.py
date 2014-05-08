@@ -1,129 +1,186 @@
+'''
+Demonstration of how to use datacenter module
+'''
 from devicemodels import Host, Spine, Leaf, Rack
-import devicemodels
-import networkx as nx
-import csv,sys
 from datacenter import DataCenter
-__author__ = 'wenjie'
+
+__author__ = 'Wenjie Chen'
 
 
-def test4():
+def demo_load_model_remove_devices_and_links():
+    print '-----demo_load_model_remove_devices_and_links-----'
+
     dc = DataCenter()
-    file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
+    file_path3 = 'dcModel3.csv'
+
+    # load from multi files
+    dc.load_model_from_files(file_path2,file_path3)
+    dc.clean_datacenter()
+
+    # change delimiter of csv file
+    dc.load_model_from_files('testModelPipeline.csv',delimiter='|')
+    dc.clean_datacenter()
+
+    #remove devices
     dc.load_model_from_files(file_path2)
-    #delete node
-    print dc.model.neighbors(Spine(1))
-    print dc.model.neighbors(Leaf(1))
-    print '==-----'
+    print 'is spine1 in data center: ',
+    print Spine(1) in dc.all_devices
+    print 'is host10 in data center: ',
+    print Host(10) in dc.all_devices
+    print 'after remove spine1, host10'
+
     dc.remove_devices(Spine(1),Host(10))
-    print dc.model.neighbors(Leaf(1))
-    print '==-----'
+
+    print 'is spine1 in data center: ',
+    print Spine(1) in dc.all_devices
+    print 'is host10 in data center: ',
+    print Host(10) in dc.all_devices
+
+    #remove not exist device, get WARNING
+    dc.remove_devices('spine1')
+    dc.clean_datacenter()
+
+    #remove link
+    dc.load_model_from_files(file_path2)
     dc.remove_link(Spine(2),Leaf(4))
-    print 'links\n', dc.all_links()
-    print dc.model.neighbors(Spine(2))
-    print '==-----'
-    dc.remove_link(Spine(3),Leaf(4))
-    print '==-----'
-    # dc.remove_devices(Spine(3))
-    # dc.remove_devices('spine1')
-    # dc.remove_link('spine1','leaf1')
+    dc.remove_link('spine3','leaf4')
+    print 'is spine2-leaf4 in data center:',
+    print (Spine(2),Leaf(4)) in dc.all_links
+    print 'is spine3-leaf4 in data center:',
+    print (Spine(3),Leaf(4)) in dc.all_links
+
+    #remove not exist link, get WARNING
     dc.remove_link(Spine(2),Host(1))
-    dc.remove_devices(Host(2))
-    print 'remove host(2), device on rack1 is',
-    print Host(2) in dc.model.node[Rack(1)]['hosts_leafs']
-    print dc.model.nodes()
 
-def test5():
+
+def demo_query_device():
+    print '\n--------demo_query_device--------'
     dc = DataCenter()
-    file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
     dc.load_model_from_files(file_path2)
-    print dc.query_device_on_port(Leaf(1),20)
-    print dc.query_device_on_port(Leaf(10),20)
-    print dc.query_device_on_port(Host(1),2)
-    print dc.query_device_on_port(Leaf(1),5,Rack(3))
-    print dc.query_device_on_port(Leaf(1),5,Rack(2))
-    print dc.query_device_on_port(Leaf(1),5,Rack(1))
-    # print dc.query_device_on_port('leaf1',5,Rack(1))
-    # print dc.query_device_on_port(Leaf(1),5,'rack1')
-    print dc.query_device_on_port(Leaf(3),5,Rack(2))
+
+    # port20 of leaf1 not exist, get WARNING
+    print 'device connected to port20 of leaf1:',
+    print dc.query_device('leaf1',20)
+
+    # leaf10 not exist, get WARNING
+    print 'device connected to port20 of leaf10:',
+    print dc.query_device('leaf10',20)
+
+    # correct query
+    print 'device connected to port2 of host1:',
+    print dc.query_device(Host(1),2)
+
+    # rack3 is not exist, get WARNING
+    print 'device connected to port5 of leaf1 in rack3:',
+    print dc.query_device(Leaf(1),5,Rack(3))
+
+    # leaf1 is not in rakc2, get WARNING
+    print 'device connected to port5 of leaf1 in rack2:',
+    print dc.query_device(Leaf(1),5,Rack(2))
+
+    # correct query
+    print 'device connected to port5 of leaf1 in rack1:',
+    print dc.query_device(Leaf(1),5,Rack(1))
+
+    # port5 of leaf3 doesn't connect other device, get WARNING
+    print 'device connected to port5 of leaf3 in rack2:',
     dc.remove_link(Leaf(3),Host(13))
-    print dc.query_device_on_port(Leaf(3),5,Rack(2))
+    print dc.query_device(Leaf(3),5,Rack(2))
 
 
-def test6():
+def demo_query_ports():
+    print '\n--------demo_query_ports--------'
     dc = DataCenter()
-    file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
     dc.load_model_from_files(file_path2)
-    print dc.query_connected_ports(Leaf(1),Spine(3))
-    # print dc.query_connected_ports(Leaf(1),'spine3')
-    # print dc.query_connected_ports(Leaf(5),Spine(1))
-    # print dc.query_connected_ports('leaf1',Spine(1))
-    print dc.query_connected_ports(Leaf(1),Host(2),Rack(2),Rack(2))
-    print dc.query_connected_ports(Leaf(1),Host(2),Rack(1),Rack(2))
-    g1 =  dc.query_connected_ports(Leaf(1),Host(2),Rack(1),Rack(1))
-    print g1.next()
-    gg = dc.query_connected_ports(Leaf(1),Spine(1))
-    print '\n'.join(str(port) for port in gg)
-    # for e in nx.edges_iter(dc.model,(Leaf(1),Spine(1))):
-    #     print e
 
-def test7():
+    # query with specify racks
+    print 'which ports of leaf1 connected to host2:',
+    ports_iter =  dc.query_ports(Leaf(1),Host(2),Rack(1),Rack(1))
+    print ports_iter.next()
+
+    # query without specify racks
+    print 'which ports of host12 connected to leaf4:',
+    ports_iter =  dc.query_ports('host12','leaf4')
+    print ports_iter.next()
+
+    # query multi links between two devices
+    dc.load_model_from_files('testModelMultiLink.csv')
+    print 'which ports of leaf1 connected to spine1:',
+    ports_iter = dc.query_ports(Leaf(1),Spine(1))
+    print ', '.join(str(port) for port in ports_iter)
+
+
+def demo_find_all_paths():
+    print '\n--------demo_find_all_paths--------'
     dc = DataCenter()
-    file_path = 'testModel.csv'
     file_path2 = 'dcModel2.csv'
     dc.load_model_from_files(file_path2)
-    # l1 = dc.get_device(Leaf(1))
-    # print l1.links
-    # gen = dc.query_all_paths(Host(1),Host(12))
-    # gen = dc.query_all_paths(Spine(1),Host(12))
-    gen = dc.query_all_paths(Leaf(1),Host(12))
-    print '\n'.join(str(p) for p in gen)
 
-def test8():
-    dc = DataCenter()
-    file_path = 'dcModel3.csv'
-    file_path2 = 'dcModel2.csv'
-    # dc.load_model_from_files(file_path)
-    # dc.load_model_from_files(file_path2)
-    # dc.load_model_from_files(file_path,file_path2,delimiter=',')
-    dc.load_model_from_files(file_path,file_path2)
-    print dc.model.nodes()
-    dc.clean_model()
-    dc.load_model_from_files(file_path,'testModel.csv',file_path2,delimiter=',')
-    print dc.model.nodes()
-    dc.clean_model()
-    dc.load_model_from_files(file_path,delimiter=',')
-    print dc.model.nodes()
+    print 'all paths bewteen leaf1 and host12: '
+    path_iter = dc.query_all_paths(Leaf(1),Host(12))
+    print '\n'.join(str(p) for p in path_iter)
 
-def test9():
+
+def demo_check_break_links():
+    print '\n--------demo_check_break_links--------'
     dc = DataCenter()
     file_path2 = 'dcModel2.csv'
-    # dc.load_model_from_files(file_path)
-    # dc.load_model_from_files(file_path2)
-    # dc.load_model_from_files(file_path,file_path2,delimiter=',')
     dc.load_model_from_files(file_path2)
+
     dc.break_link(Leaf(1),Host(1))
-    # print "host1's links", dc.model.node[Host(1)]['links']
-    # print "host1's neighbors", dc.model.neighbors(Host(1))
-    # print "leaf1's links ", dc.model.node[Leaf(1)]['links']
-    print dc.link_check()
-    # print dc.model.node[Host(1)]['links']
-    # print dc.model.node[Leaf(1)]['links']
+    dc.break_link(Spine(2),Leaf(3))
+    dc.break_link(Spine(2),Leaf(1))
 
-def test10():
+    print 'broken links: ', dc.check_link()
+
+
+def demo_access_device_trhough_API():
+    print '\n--------demo_access_device_trhough_API--------'
     dc = DataCenter()
-    file_path1 = 'testBadModel.csv'
     file_path2 = 'dcModel2.csv'
     dc.load_model_from_files(file_path2)
-    print dc.all_devices()
+
+    # use object of device to represent device in data center
+    dc.remove_link(Leaf(1),Spine(1))
+    dc.remove_devices(Host(10),Leaf(2))
+    print dc.query_device(Host(12),2,Rack(2))
+    print dc.query_ports(Leaf(3),Host(15))
+    print dc.query_all_paths(Host(2),Host(12))
+
+    dc.clean_datacenter()
+    dc.load_model_from_files(file_path2)
+
+    # use string to represent device in data center
+    dc.remove_link('leaf1','spine1')
+    dc.remove_devices('host-10','leaf-2')
+    print dc.query_device('host_12',2,'rack_2')
+    print dc.query_ports('Leaf3','Host15')
+    print dc.query_all_paths('host----2','host--12')
+
+def demo_devices_in_rack_and_device_connection_info():
+    print '\n----demo_devices_in_rack_and_device_connection_info----'
+
+    dc = DataCenter()
+    file_path2 = 'dcModel2.csv'
+    dc.load_model_from_files(file_path2)
+
+    print 'devices in rack1 :',
+    print dc.get_devices_in_rack('rack1')
+
+    print 'connections on Spine2 :',
+    print dc.get_connections_of_device('spine2')
+
+    print 'connections on Spine3 :',
+    print dc.get_connections_of_device('spine3')
 
 if __name__ == '__main__':
-    test4()
-    test5()
-    test6()
-    test7()
-    test8()
-    test9()
-    test10()
+    demo_load_model_remove_devices_and_links()
+    demo_query_device()
+    demo_query_ports()
+    demo_find_all_paths()
+    demo_check_break_links()
+    demo_access_device_trhough_API()
+    demo_devices_in_rack_and_device_connection_info()
