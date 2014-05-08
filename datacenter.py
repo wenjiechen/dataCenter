@@ -22,7 +22,6 @@ def synchronized_with(lock_name):
             lock = getattr(self, lock_name)
             with lock:
                 return method(self, *args, **kws)
-
         return synced_method
 
     return _synched
@@ -361,15 +360,14 @@ class DataCenter(object):
                 if device2 not in self._graph_model.neighbors(device):
                     broken_pairs.append((device,device2))
                     del links[port]
-                    # delete link in device2's link table
+                    # delete link in device2's links dict
                     links2 = self._graph_model.node[device2]['links']
                     for port2,device_tmp in links2.items():
                         if device_tmp == device:
                             del links2[port2]
-
+        # print result
         if self._is_print is True:
-            print 'broken links:',
-            print broken_pairs
+            print 'broken links: ', broken_pairs
         return broken_pairs
 
     @synchronized_with("rlock")
@@ -396,8 +394,14 @@ class DataCenter(object):
             return self._graph_model.node[device]['links']
 
 class LinkChecker(threading.Thread):
-
+    """A Thread to check if there are broken links in a data center
+    """
     def __init__(self,datacenter,check_interval=30):
+        """
+
+        :param datacenter: to be checked
+        :param check_interval: how often to check, default is per 30 seconds
+        """
         threading.Thread.__init__(self)
         self.dc = datacenter
         self.check_interval = check_interval
@@ -409,4 +413,6 @@ class LinkChecker(threading.Thread):
             time.sleep(self.check_interval)
 
     def stop(self):
+        """stop the link checker
+        """
         self._stop = True

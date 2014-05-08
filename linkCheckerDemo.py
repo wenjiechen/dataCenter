@@ -22,7 +22,7 @@ if __name__=='__main__':
     link_checker = LinkChecker(dc,0.5)
     link_checker.start()
 
-    # load a new model, then break two links
+    # load a new model per second, then break two links
     for i in range(0,5):
         dc.load_model_from_files(file)
         dc.break_link(*links_to_be_broken[2*i-1])
