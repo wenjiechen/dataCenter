@@ -12,7 +12,7 @@ from devicemodels import Host, Spine, Leaf, Rack, devices_factory
 
 __author__ = 'Wenjie Chen'
 
-def synchronized(lock_name):
+def synchronized_with(lock_name):
     """A decorator to place an instance based lock around a method
     """
 
@@ -108,7 +108,7 @@ class DataCenter(object):
             leaf = device2 if host == device1 else device1
             self._graph_model.node[rack]['hosts_leafs'].add(leaf)
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def load_model_from_files(self, file_path1, *file_paths,**kwargs):
         """ Load data center model from csv files, model is defined by links.
 
@@ -138,7 +138,7 @@ class DataCenter(object):
                         print >> sys.stderr,"ERROR: Check model file: '%s', at line: %d" %(file_path,line_num+2)
                         raise
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def clean_datacenter(self):
         """Remove all devices and links in data center.
         """
@@ -168,7 +168,7 @@ class DataCenter(object):
         id = id_ptn.findall(device_input)[0]
         return devices_factory(device_type,id)
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def remove_link(self,device1,device2):
         """Remove link between two devices.
 
@@ -197,7 +197,7 @@ class DataCenter(object):
                 if node == device1:
                     del links2[port]
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def remove_devices(self,device,*devices):
         """Remove devices and corresponding all links in data center.
 
@@ -243,7 +243,7 @@ class DataCenter(object):
         else:
             return True
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def query_device(self,device_queried,port,rack=None):
         """Find the device that connected to a specific port of another device.
 
@@ -272,7 +272,7 @@ class DataCenter(object):
         else:
             return ret_device
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def query_ports(self,device_queried,device2,rack1=None,rack2=None):
         """Find the port of device_queried is connected to device2.
 
@@ -301,7 +301,7 @@ class DataCenter(object):
         links1 = self._graph_model.node[device_queried]['links']
         return (port for port, device in links1.items() if device == device2)
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def get_device(self,device):
         """Get device object in data center
 
@@ -317,7 +317,7 @@ class DataCenter(object):
                 return node
         return None
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def query_all_paths(self,source,target):
         """all paths from source to target device
 
@@ -330,7 +330,7 @@ class DataCenter(object):
         return nx.all_shortest_paths(self._graph_model, source, target)
 
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def break_link(self,device1,device2):
         """Break link between two devices. only used for testing check_link()
 
@@ -347,7 +347,7 @@ class DataCenter(object):
             if self._is_device_exist(device1) and self._is_device_exist(device2):
                 print >> sys.stderr,"WARNING: %s" %(ex.args[0])
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def check_link(self):
         """ Check broken links in data center
 
@@ -372,7 +372,7 @@ class DataCenter(object):
             print broken_pairs
         return broken_pairs
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def get_devices_in_rack(self,rack):
         """ All devices in the rack
 
@@ -384,7 +384,7 @@ class DataCenter(object):
         if self._is_device_exist(rack):
             return self._graph_model.node[rack]['hosts_leafs']
 
-    @synchronized("rlock")
+    @synchronized_with("rlock")
     def get_connections_of_device(self,src_device):
         """ Get devices connected to source device
 
