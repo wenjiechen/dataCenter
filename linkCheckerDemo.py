@@ -1,5 +1,5 @@
 """
-Demonstrate how to check broken link by multi-threading
+Demonstrate how to check broken link by multi-threading.
 """
 
 import time
@@ -8,6 +8,7 @@ from datacenter import DataCenter, LinkChecker
 __author__ = 'wenjie'
 
 if __name__=='__main__':
+    # terminates 5 seconds
 
     #print datacenter inner state
     dc = DataCenter(is_print=True)
