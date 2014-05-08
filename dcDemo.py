@@ -173,6 +173,7 @@ def demo_devices_in_rack_and_device_connection_info():
     print 'connections on Spine2 :',
     print dc.get_connections_of_device('spine2')
 
+    # spine3 is not exist, get WARNING
     print 'connections on Spine3 :',
     print dc.get_connections_of_device('spine3')
 
