@@ -163,16 +163,15 @@ class TestDataCenter(unittest.TestCase):
 
         leaf1 and spine1 can be identified by their id without rack id
         '''
-        port_iter = self.dc.query_ports(Leaf(1),Spine(1))
-        self.assertEqual(1,port_iter.next())
+        ports = self.dc.query_ports(Leaf(1),Spine(1))
+        self.assertEqual([1],ports)
 
 
     def test_query_connected_two_ports_without_rackid(self):
         ''' port1 and port100 of leaf1 connects to spine1
         '''
         self.dc.load_model_from_files('testModelMultiLink.csv')
-        ports_iter = self.dc.query_ports(Leaf(1),Spine(1))
-        ports = [port for port in ports_iter]
+        ports = self.dc.query_ports(Leaf(1),Spine(1))
         self.assertEqual([1,100],sorted(ports))
 
 
@@ -195,8 +194,7 @@ class TestDataCenter(unittest.TestCase):
     def test_query_all_paths(self):
         ''' find all paths from leaf-1 to host-12
         '''
-        ps = self.dc.query_all_paths(Leaf(1),Host(12))
-        paths=[path for path in ps]
+        paths = self.dc.query_all_paths(Leaf(1),Host(12))
         paths = sorted(paths,cmp = lambda x,y: self.path_cmp(x,y))
         expected=[[Leaf(1), Spine(1), Leaf(3), Host(12)],
                     [Leaf(1), Spine(2), Leaf(3), Host(12)],

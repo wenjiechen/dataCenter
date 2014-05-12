@@ -49,7 +49,7 @@ class DataCenter(object):
         """ All device in data center
 
         rtype: list
-        :return: list of nodes
+        :return: list of nodes, change the list won't affect model
         """
         return self._graph_model.nodes()
 
@@ -297,7 +297,7 @@ class DataCenter(object):
         :param rack1: device_queried's rack
                       If specify a wrong Rack, in which device is not, return None
         :param rack2: device2's rack
-        :return: generator of ports on device_queried
+        :return: list of ports on device_queried, return empty list if no ports exist
         """
         device_queried = self._convert_device_input(device_queried)
         device2 = self._convert_device_input(device2)
@@ -306,15 +306,15 @@ class DataCenter(object):
 
         # check if devices are exist and placed on racks
         if not self._is_device_exist(device_queried) or not self._is_device_exist(device2):
-            return None
+            return []
         if rack1 is not None and not self._is_device_in_rack(device_queried,rack1):
-            return None
+            return []
         if rack2 is not None and not self._is_device_in_rack(device2,rack2):
-            return None
+            return []
 
         # find the ports of device_queried connected to device2
         links1 = self._graph_model.node[device_queried]['links']
-        return (port for port, device in links1.items() if device == device2)
+        return [port for port, device in links1.items() if device == device2]
 
 
     @synchronized_with("rlock")
@@ -340,11 +340,15 @@ class DataCenter(object):
 
         :param source: source device
         :param target: target device
-        :return: generator of list of all paths
+        :return: list of all paths, return empty list if no paths exist
         """
         source = self._convert_device_input(source)
         target = self._convert_device_input(target)
-        return nx.all_shortest_paths(self._graph_model, source, target)
+        try:
+             return [path for path in nx.all_shortest_paths(self._graph_model, source, target)]
+        except Exception:
+            #no path
+            return []
 
 
     @synchronized_with("rlock")
@@ -399,11 +403,11 @@ class DataCenter(object):
 
         :param rack:
         :rtype : set
-        :return: set of devices
+        :return: the copy of set of devices
         """
         rack = self._convert_device_input(rack)
         if self._is_device_exist(rack):
-            return self._graph_model.node[rack]['hosts_leafs']
+            return set(self._graph_model.node[rack]['hosts_leafs'])
 
 
     @synchronized_with("rlock")
@@ -411,11 +415,11 @@ class DataCenter(object):
         """ Get devices connected to source device
 
         :param src_device: source device
-        :return: dictionary <port, device> of connected devices
+        :return: the copy of dictionary <port, device> of connected devices,
         """
         device = self._convert_device_input(src_device)
         if self._is_device_exist(device) and type(device) is not Rack:
-            return self._graph_model.node[device]['links']
+            return dict(self._graph_model.node[device]['links'])
 
 
 class LinkChecker(threading.Thread):

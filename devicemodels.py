@@ -144,3 +144,9 @@ def devices_factory(device_type, ID):
         return Rack(ID)
     else:
         raise ValueError("Don't have the device type: %s " %device_type)
+
+if __name__ == '__main__':
+    l1 = Leaf(1)
+    print l1
+    # l1.ID = 100
+    print l1.ID

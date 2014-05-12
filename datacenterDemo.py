@@ -98,20 +98,24 @@ def demo_query_ports():
 
     # query with specify racks
     print 'which ports of leaf1 connected to host2:',
-    ports_iter =  dc.query_ports(Leaf(1),Host(2),Rack(1),Rack(1))
-    print ports_iter.next()
+    ports =  dc.query_ports(Leaf(1),Host(2),Rack(1),Rack(1))
+    print ports
 
     # query without specify racks
     print 'which ports of host12 connected to leaf4:',
-    ports_iter =  dc.query_ports('host12','leaf4')
-    print ports_iter.next()
+    ports =  dc.query_ports('host12','leaf4')
+    print ports
 
     # query multi links between two devices
     dc.load_model_from_files('testModelMultiLink.csv')
     print 'which ports of leaf1 connected to spine1:',
-    ports_iter = dc.query_ports(Leaf(1),Spine(1))
-    print ', '.join(str(port) for port in ports_iter)
+    ports = dc.query_ports(Leaf(1),Spine(1))
+    print ', '.join(str(port) for port in ports)
 
+    # query with wrong rack
+    print 'which ports of leaf1 connected to host2:',
+    ports =  dc.query_ports(Leaf(1),Host(2),Rack(2),Rack(1))
+    print ports
 
 def demo_find_all_paths():
     print '\n--------demo_find_all_paths--------'
@@ -120,8 +124,14 @@ def demo_find_all_paths():
     dc.load_model_from_files(file_path2)
 
     print 'all paths bewteen leaf1 and host12: '
-    path_iter = dc.query_all_paths(Leaf(1),Host(12))
-    print '\n'.join(str(p) for p in path_iter)
+    path_list= dc.query_all_paths(Leaf(1),Host(12))
+    print '\n'.join(str(p) for p in path_list)
+
+    print 'all paths bewteen host2 and host3, no path: '
+    dc.remove_link(Host(3),Leaf(1))
+    dc.remove_link(Host(3),Leaf(2))
+    path_list = dc.query_all_paths(Host(2),Host(3))
+    print path_list
 
 
 def demo_check_break_links():
@@ -177,11 +187,46 @@ def demo_devices_in_rack_and_device_connection_info():
     print 'connections on Spine3 :',
     print dc.get_connections_of_device('spine3')
 
+def demo_defensive_copy():
+    dc = DataCenter()
+    file_path2 = 'dcModel2.csv'
+    dc.load_model_from_files(file_path2)
+
+    nodes = dc.all_devices
+    print nodes
+    nodes.remove(Host(1))
+    print dc.all_devices
+
+    link = dc.all_links
+    print link
+    link.remove(link[0])
+    print dc.all_links
+
+def demo_defensive_copy2():
+    dc = DataCenter()
+    file_path2 = 'dcModel2.csv'
+    dc.load_model_from_files(file_path2)
+
+    dvc = dc.query_device('host1',2)
+    link =  dc.get_connections_of_device(dvc)
+    print link
+    del link[1]
+    print dc.get_connections_of_device(dvc)
+
+    dv = dc.get_devices_in_rack(Rack(1))
+    print dv
+    dv.remove(Host(1))
+    print dc.get_devices_in_rack(Rack(1))
+
+
+
 if __name__ == '__main__':
-    demo_load_model_remove_devices_and_links()
-    demo_query_device()
+    # demo_load_model_remove_devices_and_links()
+    # demo_query_device()
     demo_query_ports()
-    demo_find_all_paths()
-    demo_check_break_links()
-    demo_access_device_trhough_API()
-    demo_devices_in_rack_and_device_connection_info()
+    # demo_find_all_paths()
+    # demo_check_break_links()
+    # demo_access_device_trhough_API()
+    # demo_devices_in_rack_and_device_connection_info()
+    # demo_defensive_copy()
+    # demo_defensive_copy2()
